@@ -1,0 +1,73 @@
+# android中的坐标系和显示总结
+# 屏幕坐标系：x->向右 y->向下 z->向上
+
+######屏幕绝对坐标######
+# 屏幕中显示的内容=
+状态栏+
+App=(ActionBar+Content)=DecorView
+
+# 获得屏幕宽高
+# 有一个坑，就是getMetrics获取的高度有时候不是物理高度，要得到物理的高度需要使用getRealMetrics
+# 原因：Android4.4之前，getMetrics是准确的，Android4.4之后，得到的高度会忽略底部的虚拟按键
+
+# 获得view所绑定的window的可见位置大小,返回的是屏幕绝对坐标
+# getWindow().getDecorView().getWindowVisibleDisplayFrame(rect);
+
+# 但是注意，window的可见部分默认不包含状态栏，但是window的坐标计算确实从整个屏幕左上角开始的
+# DecorView的默认大小是整个屏幕
+
+######View相对坐标######
+# 获得view相对于parent的坐标,注意scroll对于这几个值没有影响,同时view本身scroll对于view本身的translationX没有影响
+# view.getLeft/Right/Top/Bottom
+
+# translationX,translationY:通过子view设置，即子view默认与父view的偏移
+# 子view调用，设置子view和父view的偏移，且向右和向下为正
+
+# 通过子View调用getX=getLeft()+getTranslationX()，含义是view相对于父view的实际偏移，默认情况下就等于getLeft
+
+
+
+# 自定义view：
+# getWidth、getHeight只有在layout之后才有效（所以就是layout是最终确定view的实际位置和大小的)
+# getMeasuredWidth、getMeasuredHeight:获得measure之后的宽高，供layout参考
+
+######Scroll相关######
+# view内容相对于view自身原始位置滑动的偏移，负值表示向右和向下
+# scrollTo(x,y)
+# 相应的，获得内容滑动滑动的偏移
+# getScrollX,getScrollY
+# 注意父的scroll不影响子的scrollX，scrollY
+
+
+# 获得view的绘制区域,这个既不是绝对坐标，也不是相对坐标，其计算方式为
+# outRect.left = mScrollX;
+  outRect.top = mScrollY;
+  outRect.right = mScrollX + (mRight - mLeft);
+  outRect.bottom = mScrollY + (mBottom - mTop);
+# 简单理解为：view中的内容相对于view本身的位置大小
+# getWindow().findViewById(R.id.text_view).getDrawingRect(rect);
+
+
+# getLocalVisibleRect:获取view的相对于本身的可视区域（受到自身scroll影响)
+# getGlobalVisibleRect：获取view在屏幕坐标系的可是区域(不受自身scroll影响)
+
+
+
+
+
+######ActionBar######
+# 获得ActionBar高度(再有action bar的情况下)
+# 如果使用getActionBar会导致NPE
+# int actionBarHeight=getSupportActionBar().getHeight();
+
+
+######MotionEvent######
+# MotionEvent中的坐标
+# getX,getY:是指相对于处理该view的左上角的偏移，在传递过程中，不同view取处理，得到的值也不一样
+# getRawX,getRawY:相对于屏幕的位置
+
+
+# Android P适配异形屏
+# 如果不是异形屏，那么直接给Window加上fullsrceen的flag和隐藏actionbar即可
+# 如果是异形屏，那么在上面的基础上，设置窗口允许使用非功能区，并且配置沉浸式即可
+
